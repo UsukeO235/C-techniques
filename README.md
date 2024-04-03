@@ -56,3 +56,54 @@ exit_ptr1_malloc_failed:
     return error_code;
 }
 ```
+
+上記の例ではエラーコードとそれに対応する終了処理タグの両方を設計、管理する必要がある。
+switch文のfall throughというテクニックを使うことで、この問題を回避できる。
+なお、ここではfall through利用の是非については考えない。
+
+```c
+#define ERROR_SUCCESS 0
+#define ERROR_PTR1_MALLOC_FAILED 1
+#define ERROR_PTR2_MALLOC_FAILED 2
+
+int main()
+{
+    int error_code = ERROR_SUCCESS;
+
+    unsigned int size1 = 16;
+    unsigned int size2 = 32;
+    
+    char* ptr1 = (char*)malloc(sizeof(char) * size1);
+    if(ptr1 == NULL)
+    {
+        error_code = ERROR_PTR1_MALLOC_FAILED;
+        goto exit;
+    }
+    
+    char* ptr2 = (char*)malloc(sizeof(char) * size2);
+    if(ptr2 == NULL)
+    {
+        error_code = ERROR_PTR2_MALLOC_FAILED;
+        goto exit;
+    }
+    
+    /* ***************** do something ***************** */
+    
+    /****************************************************/
+
+exit:
+    switch(error_code)
+    {
+        case ERROR_SUCCESS:
+            free(ptr2);
+        case ERROR_PTR2_MALLOC_FAILED:
+            free(ptr1);
+        case ERROR_PTR1_MALLOC_FAILED:
+            // None
+        default:
+            break;
+    }
+
+    return error_code;
+}
+```
